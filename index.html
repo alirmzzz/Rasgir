@@ -88,6 +88,60 @@ button:focus-visible{
 .mini{font-size:11px;color:var(--muted);line-height:1.8}
 .status-strip{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--bg-soft)}
 .rows{display:grid;gap:8px;max-height:42vh;overflow:auto;padding-left:1px}
+.compact-rows{display:grid;gap:6px;max-height:42vh;overflow:auto}
+.compact-row{
+  display:grid;grid-template-columns:54px 1fr 1fr auto;gap:8px;align-items:center;
+  border:1px solid var(--line);border-radius:14px;padding:8px 10px;
+  background:linear-gradient(180deg,var(--card-strong),var(--bg-soft))
+}
+.compact-row .field{display:grid;gap:2px}
+.compact-row .field .label{font-size:10px;color:var(--muted)}
+.compact-row .field input{min-height:36px;padding:0 10px;border-radius:12px}
+@media (max-width:640px){
+  .compact-row{grid-template-columns:44px 1fr 1fr auto;gap:6px;padding:7px 8px}
+  .compact-row .field input{min-height:34px}
+}
+.bottom-action-bar{
+  position:fixed;left:max(10px, env(safe-area-inset-left));right:max(10px, env(safe-area-inset-right));
+  bottom:max(10px, env(safe-area-inset-bottom));z-index:60;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:color-mix(in srgb, var(--card-strong) 84%, transparent);
+  box-shadow:0 18px 40px rgba(15,23,42,.18), 0 4px 12px rgba(15,23,42,.10);
+  backdrop-filter:blur(18px)
+}
+.bottom-action-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px
+}
+.bottom-dock-btn{
+  min-height:56px;border-radius:16px;padding:8px 6px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  background:linear-gradient(180deg,var(--card-strong),var(--bg-soft));
+  border:1px solid var(--line-strong);color:var(--text)
+}
+.bottom-dock-btn.primary{
+  background:linear-gradient(180deg,var(--primary2),var(--primary));
+  color:#fff;border-color:rgba(15,23,42,.22)
+}
+.bottom-dock-btn svg{width:18px;height:18px;display:block}
+.bottom-dock-btn span{font-size:11px;line-height:1}
+.bottom-action-panel{
+  display:none;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)
+}
+.bottom-action-panel.open{display:block}
+.bottom-action-panel-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px
+}
+.bottom-mini-btn{
+  min-height:42px;border-radius:14px;font-size:12px;padding:0 10px
+}
+@media (max-width:520px){
+  .bottom-action-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .bottom-dock-btn{min-height:54px}
+  .bottom-action-panel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.has-bottom-bar{padding-bottom:128px}
 .row{border:1px solid var(--line);border-radius:15px;padding:9px;background:linear-gradient(180deg,var(--card-strong),var(--bg-soft))}
 .row .form{align-items:end}
 .row-index{width:30px;height:30px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:800;border:1px solid rgba(37,99,235,.12)}
@@ -121,7 +175,7 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
 .icon-input svg{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted)}
 </style>
 </head>
-<body>
+<body class="has-bottom-bar">
 <div class="wrap">
   <div class="hero">
     <div class="hero-top">
@@ -209,10 +263,6 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
     </div>
 
     <div class="stack">
-      <div class="card">
-        <div class="head"><div><div class="title">عملیات</div><div class="meta">خروجی و ذخیره</div></div><div class="section-badge">میانبرها</div></div>
-        <div class="toolbar"><button class="btn" onclick="calculate()">محاسبه</button><button class="btn secondary" onclick="downloadCSV()">CSV</button><button class="btn secondary" onclick="downloadTXT()">TXT</button><button class="btn secondary" onclick="copyReport()">کپی گزارش</button><button class="btn secondary" onclick="saveCurrentToHistory()">ذخیره هیستوری</button><button class="btn secondary" onclick="loadDraft()">پیش‌نویس</button></div>
-        <div id="progressWrap" style="margin-top:8px;display:none"><progress id="progressBar" value="0" max="100"></progress><div class="mini" id="progressText" style="margin-top:4px">در حال پردازش...</div></div>
       </div>
 
       <div class="card">
@@ -278,27 +328,6 @@ function preprocessRichText(text){
   return t;
 }
 
-
-function classifyHeaderLine(line){
-  const s=faToEn(String(line||'')).replace(/\s+/g,' ').trim();
-  if(/^(ردیف|ردیف\s*شماره|row)$/i.test(s)) return 'row';
-  if(/^(شماره\s*چک|شماره|چک\s*شماره|check\s*no)$/i.test(s)) return 'checkno';
-  if(/^(تاریخ|تاریخ\s*چک|تاریخ\s*سررسید|سررسید)$/i.test(s)) return 'date';
-  if(/^مبلغ(?:\s*\((?:ریال|تومان|میلیون\s*تومان)\))?$/i.test(s)) return 'amount';
-  if(/^(در\s*وجه|طرف\s*حساب|نام\s*طرف|طرف)$/i.test(s)) return 'counterparty';
-  if(/^(شرح|توضیح|بابت)$/i.test(s)) return 'desc';
-  if(/^(بانک)$/i.test(s)) return 'bank';
-  if(/^(فاصله\s*از\s*مبدا(?:\s*\(روز\))?|روز|حاصل\s*مبلغ.?روز|مبلغ\s*×\s*روز)$/i.test(s)) return 'aux';
-  return null;
-}
-function detectAmountUnitFromHeader(headerText){
-  const h=faToEn(String(headerText||''));
-  if(/میلیون\s*تومان/i.test(h)) return 'million_toman';
-  if(/ریال/i.test(h)) return 'rial';
-  if(/تومان/i.test(h)) return 'toman';
-  return null;
-}
-
 function parseMarkdownTables(text){
   const lines=preprocessRichText(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   const out=[];
@@ -341,53 +370,46 @@ function parseMarkdownTables(text){
 function parseStructuredTableText(text){
   const all=preprocessRichText(text);
   const lines=all.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const headerLike=(line)=>/^(ردیف|شماره\s*چک|تاریخ(?:\s*چک|\s*سررسید)?|مبلغ(?:\s*\((?:ریال|تومان|میلیون\s*تومان)\))?|در\s*وجه|بانک|فاصله\s*از\s*مبدا(?:\s*\(روز\))?|روز|حاصل\s*مبلغ.?روز|مبلغ\s*×\s*روز)$/i.test(line);
 
-  // generic header-driven vertical table parser
-  let headersRaw=[], headersType=[], idx=0;
-  while(idx<lines.length){
-    const t=classifyHeaderLine(lines[idx]);
-    if(!t) break;
-    headersRaw.push(lines[idx]);
-    headersType.push(t);
-    idx++;
-  }
+  // mode 1: vertical copied table where each header is on its own line, then flat row values
+  let headerLines=[], idx=0;
+  while(idx<lines.length && headerLike(lines[idx])){ headerLines.push(lines[idx]); idx++; }
+  if(headerLines.length>=2 && headerLines.some(h=>/مبلغ/i.test(h)) && headerLines.some(h=>/تاریخ/i.test(h))){
+    const amountIdx=headerLines.findIndex(h=>/مبلغ/i.test(h));
+    const dateIdx=headerLines.findIndex(h=>/تاریخ/i.test(h));
+    const amountHeader=headerLines[amountIdx] || '';
+    let unitHint=null;
+    if(/ریال/i.test(amountHeader)) unitHint='rial';
+    else if(/میلیون\s*تومان/i.test(amountHeader)) unitHint='million_toman';
+    else if(/تومان/i.test(amountHeader)) unitHint='toman';
 
-  if(headersRaw.length>=2 && headersType.includes('amount') && headersType.includes('date')){
-    const rowSize=headersRaw.length;
-    const amountIdx=headersType.indexOf('amount');
-    const dateIdx=headersType.indexOf('date');
-    const unitHint=detectAmountUnitFromHeader(headersRaw[amountIdx]);
     const values=lines.slice(idx);
     const out=[];
-
-    for(let i=0; i+rowSize<=values.length; i+=rowSize){
-      const row=values.slice(i,i+rowSize);
+    for(let i=0;i+headerLines.length-1<values.length;i+=headerLines.length){
+      const row=values.slice(i,i+headerLines.length);
       const dateCell=row[dateIdx] || '';
-      const date8=onlyDigits(dateCell);
-      if(date8.length!==8) continue; // rows like "نامشخص" should be skipped
-      try{ parseJalaliFast(date8); }catch(e){ continue; }
-
       const amountCell=row[amountIdx] || '';
-      let amountToman=null;
+      const date8=onlyDigits(dateCell);
+      if(date8.length!==8) continue;
+      try{ parseJalaliFast(date8); }catch(e){ continue; }
+      let amountToman;
       if(unitHint==='million_toman') amountToman=parseMoneyRawToToman(amountCell+' میلیون', null);
       else amountToman=parseMoneyRawToToman(amountCell, unitHint);
-
-      if(amountToman) out.push({amountToman, date8});
+      if(amountToman) out.push({amountToman,date8});
     }
     if(out.length) return out;
   }
 
-  // fallback for simpler copied tables
-  const unitHint=/مبلغ\s*\(\s*ریال\s*\)/i.test(all)?'rial':(/مبلغ\s*\(\s*تومان|میلیون\s*تومان\s*\)/i.test(all)?(/میلیون\s*تومان/i.test(all)?'million_toman':'toman'):null);
-  const kept=lines.filter(line=>!classifyHeaderLine(line));
+  // mode 2: fallback older 3/4-column vertical tables
+  const unitHint=/مبلغ\s*\(\s*ریال\s*\)/i.test(all)?'rial':(/مبلغ\s*\(\s*تومان\s*\)/i.test(all)?'toman':null);
+  const kept=lines.filter(line=>!/^(ردیف|مبلغ(?:\s*\((?:ریال|تومان|میلیون\s*تومان)\))?|تاریخ\s*سررسید|فاصله\s*از\s*مبدا(?:\s*\(روز\))?|روز|شماره\s*چک|بانک|در\s*وجه|حاصل\s*مبلغ.?روز|مبلغ\s*×\s*روز)$/i.test(line));
   const out=[]; let i=0;
   while(i<kept.length){
     const a=kept[i]||'', b=kept[i+1]||'', c=kept[i+2]||'', d=kept[i+3]||'';
     const aDigits=onlyDigits(a), cDigits=onlyDigits(c), dDigits=onlyDigits(d);
     if(/^\d+$/.test(aDigits) && cDigits.length===8){
-      let toman;
-      if(unitHint==='million_toman') toman=parseMoneyRawToToman(b+' میلیون', null);
-      else toman=parseMoneyRawToToman(b, unitHint);
+      const toman=parseMoneyRawToToman(b,unitHint);
       if(toman){ out.push({amountToman:toman,date8:cDigits}); i += (/^\d+$/.test(dDigits)?4:3); continue; }
     }
     i += 1;
@@ -508,16 +530,19 @@ function replaceWithParsedChecks(){ if(!parsedChecksBuffer.length) parseTextToCh
 
 function attachInputBehavior(inp,type){ inp.addEventListener('blur',()=>{ if(type==='amount'&&inp.value.trim()) inp.value=prettyMillionInput(inp.value); saveDraft(); }); inp.addEventListener('input',saveDraft); }
 function createRow(amount='',date=''){
-  const idx=document.querySelectorAll('.row').length+1;
-  const div=document.createElement('div'); div.className='row';
-  div.innerHTML=`<div class="form"><div class="c2"><label>ردیف</label><div class="row-index">${idx}</div></div><div class="c5"><label>مبلغ (میلیون تومان)</label><input class="amount" value="${amount}" placeholder="189"></div><div class="c4"><label>تاریخ چک</label><input class="date" value="${date}" placeholder="14050220"></div><div class="c1" style="display:flex;align-items:end"><button class="btn danger tiny" onclick="removeRow(this)">حذف</button></div></div>`;
+  const idx=document.querySelectorAll('.compact-row').length+1;
+  const div=document.createElement('div'); div.className='compact-row';
+  div.innerHTML=`<div><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:3px">ردیف</div><div class="row-index">${idx}</div></div>
+  <div class="field"><div class="label">مبلغ</div><input class="amount" value="${amount}" placeholder="189"></div>
+  <div class="field"><div class="label">تاریخ</div><input class="date" value="${date}" placeholder="14050220"></div>
+  <div style="display:flex;align-items:end"><button class="btn danger tiny" onclick="removeRow(this)">حذف</button></div>`;
   document.getElementById('rows').appendChild(div);
   attachInputBehavior(div.querySelector('.amount'),'amount');
   attachInputBehavior(div.querySelector('.date'),'date');
   refreshIndices();
 }
-function refreshIndices(){ document.querySelectorAll('.row').forEach((row,i)=>row.querySelector('.row-index').textContent=i+1); }
-function removeRow(btn){ btn.closest('.row').remove(); refreshIndices(); saveDraft(); }
+function refreshIndices(){ document.querySelectorAll('.compact-row').forEach((row,i)=>row.querySelector('.row-index').textContent=i+1); }
+function removeRow(btn){ btn.closest('.compact-row').remove(); refreshIndices(); saveDraft(); }
 function addRow(){ createRow('',''); saveDraft(); }
 function clearRows(){ document.getElementById('rows').innerHTML=''; document.querySelector('#detailsTable tbody').innerHTML=''; document.getElementById('reportBox').value=''; document.getElementById('resultArea').style.display='none'; lastResult=null; saveDraft(); }
 function loadDemo(){ clearRows(); [['120','14050427'],['400','14050630'],['120','14050627'],['120','14050527']].forEach(x=>createRow(x[0],x[1])); saveDraft(); }
@@ -527,7 +552,7 @@ function collectData(){
   const monthlyRate=Number(faToEn(document.getElementById('monthlyRate').value))/100;
   const monthBase=Number(document.getElementById('monthBase').value);
   if(isNaN(monthlyRate)||monthlyRate<0) throw new Error('نرخ ماهانه نامعتبر است');
-  const rows=[...document.querySelectorAll('.row')];
+  const rows=[...document.querySelectorAll('.compact-row')];
   if(!rows.length) throw new Error('حداقل یک چک وارد کن');
   const items=rows.map((row,i)=>{ const amountToman=amountInputToToman(row.querySelector('.amount').value); const date=parseJalaliFast(row.querySelector('.date').value); return {index:i+1,amount:amountToman,date8:date.text,jdn:date.jdn}; });
   return {origin,monthlyRate,monthBase,items};
@@ -610,7 +635,7 @@ function downloadTXT(){ if(!lastResult){ alert('اول محاسبه کن'); retu
 function copyReport(){ if(!lastResult){ alert('اول محاسبه کن'); return; } const text=buildReport(lastResult); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>alert('گزارش کپی شد')).catch(()=>fallbackCopy(text)); } else fallbackCopy(text); }
 function fallbackCopy(text){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('گزارش کپی شد'); }
 
-function getDraftObject(){ const rows=[...document.querySelectorAll('.row')].map(row=>({amount:faToEn(row.querySelector('.amount').value),date:onlyDigits(row.querySelector('.date').value)})); return {dealName:document.getElementById('dealName').value,dealNote:document.getElementById('dealNote').value,originDate:onlyDigits(document.getElementById('originDate').value),monthlyRate:document.getElementById('monthlyRate').value,monthBase:document.getElementById('monthBase').value,bulkText:document.getElementById('bulkText').value,rows}; }
+function getDraftObject(){ const rows=[...document.querySelectorAll('.compact-row')].map(row=>({amount:faToEn(row.querySelector('.amount').value),date:onlyDigits(row.querySelector('.date').value)})); return {dealName:document.getElementById('dealName').value,dealNote:document.getElementById('dealNote').value,originDate:onlyDigits(document.getElementById('originDate').value),monthlyRate:document.getElementById('monthlyRate').value,monthBase:document.getElementById('monthBase').value,bulkText:document.getElementById('bulkText').value,rows}; }
 function saveDraft(){ try{ localStorage.setItem(DRAFT_KEY,JSON.stringify(getDraftObject())); }catch(e){} }
 function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); if(!raw){ alert('پیش‌نویسی پیدا نشد'); return; } applySavedDraft(JSON.parse(raw)); alert('پیش‌نویس بارگذاری شد'); }catch(e){ alert('بارگذاری انجام نشد'); } }
 function applySavedDraft(obj){ document.getElementById('dealName').value=obj.dealName||''; document.getElementById('dealNote').value=obj.dealNote||''; document.getElementById('originDate').value=obj.originDate||''; document.getElementById('monthlyRate').value=obj.monthlyRate||''; document.getElementById('monthBase').value=obj.monthBase||'30'; document.getElementById('bulkText').value=obj.bulkText||''; document.getElementById('rows').innerHTML=''; (obj.rows||[]).forEach(r=>createRow(r.amount,r.date)); if(!(obj.rows||[]).length){ createRow('',''); createRow('',''); } }
@@ -623,6 +648,11 @@ function copyHistoryItem(id){ const item=getHistory().find(x=>x.id===id); if(!it
 function deleteHistoryItem(id){ setHistory(getHistory().filter(x=>x.id!==id)); renderHistory(); }
 function clearHistory(){ localStorage.removeItem(HISTORY_KEY); renderHistory(); }
 function exportHistory(){ const items=getHistory(); if(!items.length){ alert('هیستوری خالی است'); return; } saveBlob('check_discount_history.json',JSON.stringify(items,null,2),'application/json;charset=utf-8'); }
+
+function toggleActionPanel(){
+  const panel=document.getElementById('bottomActionPanel');
+  panel.classList.toggle('open');
+}
 
 function setActiveTab(id){ document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.classList.remove('active')); const pane=document.getElementById(id); if(pane) pane.classList.add('active'); document.querySelectorAll('.tab-btn[data-tab="'+id+'"]').forEach(b=>b.classList.add('active')); }
 function initTabs(){ document.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>btn.addEventListener('click',()=>setActiveTab(btn.getAttribute('data-tab')))); }
@@ -655,5 +685,41 @@ createRow('',''); createRow('','');
 try{ const raw=localStorage.getItem(DRAFT_KEY); if(raw) applySavedDraft(JSON.parse(raw)); }catch(e){}
 renderHistory();
 </script>
+
+  
+  <div class="bottom-action-bar">
+    <div class="bottom-action-grid">
+      <button class="bottom-dock-btn primary" onclick="calculate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+        <span>محاسبه</span>
+      </button>
+      <button class="bottom-dock-btn" onclick="saveCurrentToHistory()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V7l4-4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/></svg>
+        <span>ذخیره</span>
+      </button>
+      <button class="bottom-dock-btn" onclick="copyReport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>کپی</span>
+      </button>
+      <button class="bottom-dock-btn" onclick="toggleActionPanel()" id="moreActionBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        <span>بیشتر</span>
+      </button>
+    </div>
+
+    <div id="bottomActionPanel" class="bottom-action-panel">
+      <div class="bottom-action-panel-grid">
+        <button class="btn secondary bottom-mini-btn" onclick="downloadCSV()">خروجی CSV</button>
+        <button class="btn secondary bottom-mini-btn" onclick="downloadTXT()">خروجی TXT</button>
+        <button class="btn secondary bottom-mini-btn" onclick="loadDraft()">پیش‌نویس</button>
+      </div>
+      <div id="progressWrap" style="margin-top:8px;display:none">
+        <progress id="progressBar" value="0" max="100"></progress>
+        <div class="mini" id="progressText" style="margin-top:4px">در حال پردازش...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
 </body>
 </html>

@@ -7,12 +7,5 @@
   "theme_color": "#0f172a",
   "lang": "fa",
   "dir": "rtl",
-  "icons": [
-    {
-      "src": "icon-1024.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+  "icons": [{"src":"icon-1024.png","sizes":"1024x1024","type":"image/png","purpose":"any maskable"}]
 }
