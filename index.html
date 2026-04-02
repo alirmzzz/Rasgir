@@ -244,8 +244,10 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
           <div class="kpi"><div class="k">جمع تنزیل</div><div class="v" id="sumDiscount">0</div></div>
           <div class="kpi"><div class="k">نرخ مؤثر کل دوره</div><div class="v" id="effectivePeriod">0%</div></div>
           <div class="kpi"><div class="k">نرخ مؤثر ماهانه</div><div class="v" id="effectiveMonthly">0%</div></div>
+          <div class="kpi"><div class="k">عدد معادل راس</div><div class="v" id="simplePrincipal">0</div></div>
+          <div class="kpi"><div class="k">اختلاف با ارزش روز صفر</div><div class="v" id="principalVsPV">0</div></div>
           <div class="kpi"><div class="k">تعداد چک</div><div class="v" id="checksCount">0</div></div>
-        </div></div></div>
+        </div><div class="mini" style="margin-top:8px">عدد معادل راس = عددی که اگر با فرمول ساده «اصل + اصل × نرخ ÷ ۳۰ × راس وزنی» محاسبه شود، به جمع مبلغ اسمی برسد.</div></div></div>
         <div id="paneChart" class="pane"><canvas id="chartCanvas" width="900" height="260"></canvas></div>
         <div id="paneCompare" class="pane"><div class="compare-box">
           <div class="compare-card"><div class="head"><div class="title">سناریو A</div><div class="meta">معامله فعلی</div></div><div id="compareA" class="mini">هنوز محاسبه نشده</div></div>
@@ -276,7 +278,7 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
 
 <script>
 let lastResult=null, parsedChecksBuffer=[];
-const HISTORY_KEY='check_discount_history_v14', DRAFT_KEY='check_discount_draft_v14', THEME_KEY='check_discount_theme_v14';
+const HISTORY_KEY='check_discount_history_v20', DRAFT_KEY='check_discount_draft_v20', THEME_KEY='check_discount_theme_v20';
 
 function faToEn(str){ const fa='۰۱۲۳۴۵۶۷۸۹', ar='٠١٢٣٤٥٦٧٨٩'; return String(str||'').split('').map(ch=>fa.includes(ch)?String(fa.indexOf(ch)):ar.includes(ch)?String(ar.indexOf(ch)):ch==='٬'?'':ch).join(''); }
 function onlyDigits(s){ return faToEn(s).replace(/\D/g,''); }
@@ -567,7 +569,9 @@ function calculate(){
         const data=collectData(); let totalFace=0,totalWeight=0,totalPV=0; const details=[];
         data.items.forEach((it,idx)=>{ const days=it.jdn-data.origin.jdn, weight=it.amount*days, pv=it.amount/(1+(data.monthlyRate/data.monthBase)*days), discount=it.amount-pv; totalFace+=it.amount; totalWeight+=weight; totalPV+=pv; details.push({index:it.index,amount:it.amount,date8:it.date8,days,weight,pv,discount}); setProgress(10+Math.round(((idx+1)/data.items.length)*80),'ردیف '+(idx+1)+' از '+data.items.length); });
         const weightedDays=totalWeight/totalFace, weightedDate=jdnToDate8(data.origin.jdn+weightedDays), totalDiscount=totalFace-totalPV, effectivePeriod=totalDiscount/totalPV, effectiveMonthly=weightedDays>0?(effectivePeriod*data.monthBase/weightedDays):0;
-        lastResult={name:document.getElementById('dealName').value.trim()||'بدون نام',note:document.getElementById('dealNote').value.trim(),originDate:data.origin.text,monthlyRatePercent:Number(faToEn(document.getElementById('monthlyRate').value)),monthBase:data.monthBase,totalFace,weightedDays,weightedDate,totalPV,totalDiscount,effectivePeriod,effectiveMonthly,count:details.length,details};
+        const simplePrincipal=totalFace/(1+(data.monthlyRate/data.monthBase)*weightedDays);
+        const principalVsPV=totalPV-simplePrincipal;
+        lastResult={name:document.getElementById('dealName').value.trim()||'بدون نام',note:document.getElementById('dealNote').value.trim(),originDate:data.origin.text,monthlyRatePercent:Number(faToEn(document.getElementById('monthlyRate').value)),monthBase:data.monthBase,totalFace,weightedDays,weightedDate,totalPV,totalDiscount,effectivePeriod,effectiveMonthly,simplePrincipal,principalVsPV,count:details.length,details};
         renderResult(); saveDraft(); setProgress(100,'انجام شد'); setTimeout(hideProgress,250);
       }catch(e){ hideProgress(); alert(e.message||'خطا در محاسبه'); }
     },20);
@@ -583,11 +587,13 @@ function renderResult(){
   document.getElementById('sumDiscount').textContent=numFmt(lastResult.totalDiscount,2);
   document.getElementById('effectivePeriod').textContent=numFmt(lastResult.effectivePeriod*100,2)+'%';
   document.getElementById('effectiveMonthly').textContent=numFmt(lastResult.effectiveMonthly*100,2)+'%';
+  document.getElementById('simplePrincipal').textContent=numFmt(lastResult.simplePrincipal,2);
+  document.getElementById('principalVsPV').textContent=numFmt(lastResult.principalVsPV,2);
   document.getElementById('checksCount').textContent=String(lastResult.count);
   document.querySelector('#detailsTable tbody').innerHTML=lastResult.details.map(d=>`<tr><td>${d.index}</td><td>${numFmt(d.amount,2)}</td><td>${displayDate8(d.date8)}</td><td>${numFmt(d.days,0)}</td><td>${numFmt(d.weight,2)}</td><td>${numFmt(d.pv,2)}</td><td>${numFmt(d.discount,2)}</td></tr>`).join('');
   document.getElementById('reportBox').value=buildReport(lastResult);
   drawChart(lastResult);
-  document.getElementById('compareA').innerHTML='نام: <b>'+escapeHtml(lastResult.name)+'</b><br>جمع اسمی: '+numFmt(lastResult.totalFace,2)+'<br>ارزش روز صفر: '+numFmt(lastResult.totalPV,2)+'<br>جمع تنزیل: '+numFmt(lastResult.totalDiscount,2)+'<br>راس: '+numFmt(lastResult.weightedDays,2)+' روز';
+  document.getElementById('compareA').innerHTML='نام: <b>'+escapeHtml(lastResult.name)+'</b><br>جمع اسمی: '+numFmt(lastResult.totalFace,2)+'<br>عدد معادل راس: '+numFmt(lastResult.simplePrincipal,2)+'<br>ارزش روز صفر: '+numFmt(lastResult.totalPV,2)+'<br>جمع تنزیل: '+numFmt(lastResult.totalDiscount,2)+'<br>راس: '+numFmt(lastResult.weightedDays,2)+' روز';
 }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 function buildReport(r){
@@ -603,7 +609,10 @@ function buildReport(r){
   lines.push('ارزش روز صفر: '+numFmt(r.totalPV,2));
   lines.push('جمع تنزیل: '+numFmt(r.totalDiscount,2));
   lines.push('نرخ مؤثر کل دوره: '+numFmt(r.effectivePeriod*100,2)+'%');
-  lines.push('نرخ مؤثر ماهانه: '+numFmt(r.effectiveMonthly*100,2)+'%','');
+  lines.push('نرخ مؤثر ماهانه: '+numFmt(r.effectiveMonthly*100,2)+'%');
+  lines.push('عدد معادل راس: '+numFmt(r.simplePrincipal,2));
+  lines.push('اختلاف عدد معادل راس با ارزش روز صفر: '+numFmt(r.principalVsPV,2));
+  lines.push('');
   r.details.forEach(d=>lines.push(`ردیف ${d.index} | مبلغ: ${numFmt(d.amount,2)} | تاریخ: ${displayDate8(d.date8)} | روز: ${numFmt(d.days,0)} | ارزش روز صفر: ${numFmt(d.pv,2)} | تنزیل: ${numFmt(d.discount,2)}`));
   return lines.join('\n');
 }
