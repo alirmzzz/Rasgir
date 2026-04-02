@@ -244,10 +244,10 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
           <div class="kpi"><div class="k">جمع تنزیل</div><div class="v" id="sumDiscount">0</div></div>
           <div class="kpi"><div class="k">نرخ مؤثر کل دوره</div><div class="v" id="effectivePeriod">0%</div></div>
           <div class="kpi"><div class="k">نرخ مؤثر ماهانه</div><div class="v" id="effectiveMonthly">0%</div></div>
-          <div class="kpi"><div class="k">عدد معادل راس</div><div class="v" id="simplePrincipal">0</div></div>
-          <div class="kpi"><div class="k">اختلاف با ارزش روز صفر</div><div class="v" id="principalVsPV">0</div></div>
+          <div class="kpi"><div class="k">ارزش روز صفر ساده</div><div class="v" id="simplePrincipal">0</div></div>
+          <div class="kpi"><div class="k">اختلاف با ارزش دقیق</div><div class="v" id="principalVsPV">0</div></div>
           <div class="kpi"><div class="k">تعداد چک</div><div class="v" id="checksCount">0</div></div>
-        </div><div class="mini" style="margin-top:8px">عدد معادل راس = عددی که اگر با فرمول ساده «اصل + اصل × نرخ ÷ ۳۰ × راس وزنی» محاسبه شود، به جمع مبلغ اسمی برسد.</div></div></div>
+        </div><div class="mini" style="margin-top:8px">ارزش روز صفر = جمع مبلغ اسمی منهای سود خطی بر مبنای «جمع مبلغ اسمی × نرخ ÷ ۳۰ × راس وزنی». اختلاف با ارزش دقیق هم جداگانه نمایش داده می‌شود.</div></div></div>
         <div id="paneChart" class="pane"><canvas id="chartCanvas" width="900" height="260"></canvas></div>
         <div id="paneCompare" class="pane"><div class="compare-box">
           <div class="compare-card"><div class="head"><div class="title">سناریو A</div><div class="meta">معامله فعلی</div></div><div id="compareA" class="mini">هنوز محاسبه نشده</div></div>
@@ -278,11 +278,11 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
 
 <script>
 let lastResult=null, parsedChecksBuffer=[];
-const HISTORY_KEY='check_discount_history_v20', DRAFT_KEY='check_discount_draft_v20', THEME_KEY='check_discount_theme_v20';
+const HISTORY_KEY='check_discount_history_v21', DRAFT_KEY='check_discount_draft_v21', THEME_KEY='check_discount_theme_v21';
 
 function faToEn(str){ const fa='۰۱۲۳۴۵۶۷۸۹', ar='٠١٢٣٤٥٦٧٨٩'; return String(str||'').split('').map(ch=>fa.includes(ch)?String(fa.indexOf(ch)):ar.includes(ch)?String(ar.indexOf(ch)):ch==='٬'?'':ch).join(''); }
 function onlyDigits(s){ return faToEn(s).replace(/\D/g,''); }
-function numFmt(n,d=2){ return Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function numFmt(n,d=0){ return Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function div(a,b){ return ~~(a/b); } function mod(a,b){ return a-~~(a/b)*b; }
 function jalCal(jy){ const breaks=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178]; let bl=breaks.length, gy=jy+621, leapJ=-14, jp=breaks[0], jm, jump, leap, leapG, march, n, i; if(jy<jp||jy>=breaks[bl-1]) throw new Error('سال خارج از محدوده است'); for(i=1;i<bl;i++){ jm=breaks[i]; jump=jm-jp; if(jy<jm) break; leapJ += div(jump,33)*8 + div(mod(jump,33),4); jp=jm; } n=jy-jp; leapJ += div(n,33)*8 + div(mod(n,33)+3,4); if(mod(jump,33)===4 && jump-n===4) leapJ++; leapG = div(gy,4) - div((div(gy,100)+1)*3,4) - 150; march = 20 + leapJ - leapG; if(jump-n<6) n=n-jump+div(jump+4,33)*33; leap=mod(mod(n+1,33)-1,4); if(leap===-1) leap=4; return {leap,gy,march};}
 function g2d(gy,gm,gd){ let d=div((gy+div(gm-8,6)+100100)*1461,4)+div(153*mod(gm+9,12)+2,5)+gd-34840408; d=d-div(div(gy+100100+div(gm-8,6),100)*3,4)+752; return d; }
@@ -568,10 +568,15 @@ function calculate(){
       try{
         const data=collectData(); let totalFace=0,totalWeight=0,totalPV=0; const details=[];
         data.items.forEach((it,idx)=>{ const days=it.jdn-data.origin.jdn, weight=it.amount*days, pv=it.amount/(1+(data.monthlyRate/data.monthBase)*days), discount=it.amount-pv; totalFace+=it.amount; totalWeight+=weight; totalPV+=pv; details.push({index:it.index,amount:it.amount,date8:it.date8,days,weight,pv,discount}); setProgress(10+Math.round(((idx+1)/data.items.length)*80),'ردیف '+(idx+1)+' از '+data.items.length); });
-        const weightedDays=totalWeight/totalFace, weightedDate=jdnToDate8(data.origin.jdn+weightedDays), totalDiscount=totalFace-totalPV, effectivePeriod=totalDiscount/totalPV, effectiveMonthly=weightedDays>0?(effectivePeriod*data.monthBase/weightedDays):0;
-        const simplePrincipal=totalFace/(1+(data.monthlyRate/data.monthBase)*weightedDays);
-        const principalVsPV=totalPV-simplePrincipal;
-        lastResult={name:document.getElementById('dealName').value.trim()||'بدون نام',note:document.getElementById('dealNote').value.trim(),originDate:data.origin.text,monthlyRatePercent:Number(faToEn(document.getElementById('monthlyRate').value)),monthBase:data.monthBase,totalFace,weightedDays,weightedDate,totalPV,totalDiscount,effectivePeriod,effectiveMonthly,simplePrincipal,principalVsPV,count:details.length,details};
+        const weightedDays=totalWeight/totalFace, weightedDate=jdnToDate8(data.origin.jdn+weightedDays);
+        const totalPVExact=totalPV;
+        const totalPV=totalFace - (totalFace*(data.monthlyRate/data.monthBase)*weightedDays);
+        const totalDiscount=totalFace-totalPV;
+        const effectivePeriod=totalPV>0 ? (totalDiscount/totalPV) : 0;
+        const effectiveMonthly=weightedDays>0?(effectivePeriod*data.monthBase/weightedDays):0;
+        const simplePrincipal=totalPV;
+        const principalVsPV=totalPVExact-totalPV;
+        lastResult={name:document.getElementById('dealName').value.trim()||'بدون نام',note:document.getElementById('dealNote').value.trim(),originDate:data.origin.text,monthlyRatePercent:Number(faToEn(document.getElementById('monthlyRate').value)),monthBase:data.monthBase,totalFace,weightedDays,weightedDate,totalPV,totalPVExact,totalDiscount,effectivePeriod,effectiveMonthly,simplePrincipal,principalVsPV,count:details.length,details};
         renderResult(); saveDraft(); setProgress(100,'انجام شد'); setTimeout(hideProgress,250);
       }catch(e){ hideProgress(); alert(e.message||'خطا در محاسبه'); }
     },20);
@@ -580,20 +585,20 @@ function calculate(){
 function renderResult(){
   if(!lastResult) return;
   document.getElementById('resultArea').style.display='block';
-  document.getElementById('sumFace').textContent=numFmt(lastResult.totalFace,2);
-  document.getElementById('weightedDays').textContent=numFmt(lastResult.weightedDays,2);
+  document.getElementById('sumFace').textContent=numFmt(lastResult.totalFace);
+  document.getElementById('weightedDays').textContent=numFmt(lastResult.weightedDays);
   document.getElementById('weightedDate').textContent=displayDate8(lastResult.weightedDate);
-  document.getElementById('sumPV').textContent=numFmt(lastResult.totalPV,2);
-  document.getElementById('sumDiscount').textContent=numFmt(lastResult.totalDiscount,2);
-  document.getElementById('effectivePeriod').textContent=numFmt(lastResult.effectivePeriod*100,2)+'%';
-  document.getElementById('effectiveMonthly').textContent=numFmt(lastResult.effectiveMonthly*100,2)+'%';
-  document.getElementById('simplePrincipal').textContent=numFmt(lastResult.simplePrincipal,2);
-  document.getElementById('principalVsPV').textContent=numFmt(lastResult.principalVsPV,2);
+  document.getElementById('sumPV').textContent=numFmt(lastResult.totalPV);
+  document.getElementById('sumDiscount').textContent=numFmt(lastResult.totalDiscount);
+  document.getElementById('effectivePeriod').textContent=numFmt(lastResult.effectivePeriod*100)+'%';
+  document.getElementById('effectiveMonthly').textContent=numFmt(lastResult.effectiveMonthly*100)+'%';
+  document.getElementById('simplePrincipal').textContent=numFmt(lastResult.simplePrincipal);
+  document.getElementById('principalVsPV').textContent=numFmt(lastResult.principalVsPV);
   document.getElementById('checksCount').textContent=String(lastResult.count);
-  document.querySelector('#detailsTable tbody').innerHTML=lastResult.details.map(d=>`<tr><td>${d.index}</td><td>${numFmt(d.amount,2)}</td><td>${displayDate8(d.date8)}</td><td>${numFmt(d.days,0)}</td><td>${numFmt(d.weight,2)}</td><td>${numFmt(d.pv,2)}</td><td>${numFmt(d.discount,2)}</td></tr>`).join('');
+  document.querySelector('#detailsTable tbody').innerHTML=lastResult.details.map(d=>`<tr><td>${d.index}</td><td>${numFmt(d.amount)}</td><td>${displayDate8(d.date8)}</td><td>${numFmt(d.days)}</td><td>${numFmt(d.weight)}</td><td>${numFmt(d.pv)}</td><td>${numFmt(d.discount)}</td></tr>`).join('');
   document.getElementById('reportBox').value=buildReport(lastResult);
   drawChart(lastResult);
-  document.getElementById('compareA').innerHTML='نام: <b>'+escapeHtml(lastResult.name)+'</b><br>جمع اسمی: '+numFmt(lastResult.totalFace,2)+'<br>عدد معادل راس: '+numFmt(lastResult.simplePrincipal,2)+'<br>ارزش روز صفر: '+numFmt(lastResult.totalPV,2)+'<br>جمع تنزیل: '+numFmt(lastResult.totalDiscount,2)+'<br>راس: '+numFmt(lastResult.weightedDays,2)+' روز';
+  document.getElementById('compareA').innerHTML='نام: <b>'+escapeHtml(lastResult.name)+'</b><br>جمع اسمی: '+numFmt(lastResult.totalFace)+'<br>ارزش روز صفر ساده: '+numFmt(lastResult.simplePrincipal)+'<br>ارزش دقیق: '+numFmt(lastResult.totalPVExact)+'<br>جمع تنزیل: '+numFmt(lastResult.totalDiscount)+'<br>راس: '+numFmt(lastResult.weightedDays)+' روز';
 }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 function buildReport(r){
@@ -603,17 +608,17 @@ function buildReport(r){
   lines.push('نرخ ماهانه: '+r.monthlyRatePercent+'%');
   lines.push('مبنای ماه: '+r.monthBase+' روز');
   lines.push('تعداد چک: '+r.count);
-  lines.push('جمع مبلغ اسمی: '+numFmt(r.totalFace,2));
-  lines.push('راس وزنی: '+numFmt(r.weightedDays,2)+' روز');
+  lines.push('جمع مبلغ اسمی: '+numFmt(r.totalFace));
+  lines.push('راس وزنی: '+numFmt(r.weightedDays)+' روز');
   lines.push('تاریخ راس: '+displayDate8(r.weightedDate));
-  lines.push('ارزش روز صفر: '+numFmt(r.totalPV,2));
-  lines.push('جمع تنزیل: '+numFmt(r.totalDiscount,2));
-  lines.push('نرخ مؤثر کل دوره: '+numFmt(r.effectivePeriod*100,2)+'%');
-  lines.push('نرخ مؤثر ماهانه: '+numFmt(r.effectiveMonthly*100,2)+'%');
-  lines.push('عدد معادل راس: '+numFmt(r.simplePrincipal,2));
-  lines.push('اختلاف عدد معادل راس با ارزش روز صفر: '+numFmt(r.principalVsPV,2));
+  lines.push('ارزش روز صفر ساده: '+numFmt(r.totalPV));
+  lines.push('ارزش دقیق: '+numFmt(r.totalPVExact));
+  lines.push('جمع تنزیل: '+numFmt(r.totalDiscount));
+  lines.push('نرخ مؤثر کل دوره: '+numFmt(r.effectivePeriod*100)+'%');
+  lines.push('نرخ مؤثر ماهانه: '+numFmt(r.effectiveMonthly*100)+'%');
+  lines.push('اختلاف ارزش ساده با ارزش دقیق: '+numFmt(r.principalVsPV));
   lines.push('');
-  r.details.forEach(d=>lines.push(`ردیف ${d.index} | مبلغ: ${numFmt(d.amount,2)} | تاریخ: ${displayDate8(d.date8)} | روز: ${numFmt(d.days,0)} | ارزش روز صفر: ${numFmt(d.pv,2)} | تنزیل: ${numFmt(d.discount,2)}`));
+  r.details.forEach(d=>lines.push(`ردیف ${d.index} | مبلغ: ${numFmt(d.amount)} | تاریخ: ${displayDate8(d.date8)} | روز: ${numFmt(d.days)} | ارزش دقیق: ${numFmt(d.pv)} | تنزیل دقیق: ${numFmt(d.discount)}`));
   return lines.join('\n');
 }
 function drawChart(r){
@@ -635,7 +640,7 @@ function runCompare(){
     const target=Number(faToEn(document.getElementById('cmpRate').value));
     if(!(face>0&&pv>0&&days>0&&target>=0)) throw new Error('داده‌ها ناقص است');
     const period=(face-pv)/pv, monthly=period*30/days*100, diff=monthly-target;
-    document.getElementById('compareBox').innerHTML='نرخ مؤثر ماهانه: <b>'+numFmt(monthly,2)+'%</b><br>اختلاف با نرخ هدف '+target+'%: <b class="'+(diff>0?'bad':'ok')+'">'+numFmt(diff,2)+'%</b>';
+    document.getElementById('compareBox').innerHTML='نرخ مؤثر ماهانه: <b>'+numFmt(monthly)+'%</b><br>اختلاف با نرخ هدف '+target+'%: <b class="'+(diff>0?'bad':'ok')+'">'+numFmt(diff)+'%</b>';
   }catch(e){ document.getElementById('compareBox').textContent=e.message; }
 }
 function saveBlob(filename,content,mime){ const blob=new Blob([content],{type:mime}), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a); URL.revokeObjectURL(url);},400); }
