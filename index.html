@@ -169,6 +169,23 @@ th{position:sticky;top:0;background:var(--bg-soft);color:var(--muted);font-size:
 .compare-card{border:1px solid var(--line);border-radius:15px;padding:10px;background:linear-gradient(180deg,var(--card-strong),var(--bg-soft))}
 .ok{color:var(--ok)} .bad{color:var(--danger)} progress{width:100%;height:12px}
 canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;background:var(--card-strong)}
+.kpi.clickable{cursor:pointer}
+.kpi.clickable:active{transform:translateY(1px)}
+.info-modal-backdrop{
+  position:fixed;inset:0;background:rgba(15,23,42,.38);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:120;padding:18px
+}
+.info-modal-backdrop.open{display:flex}
+.info-modal{
+  width:min(520px,100%);background:var(--card-strong);color:var(--text);border:1px solid var(--line);
+  border-radius:18px;box-shadow:var(--shadow);padding:14px
+}
+.info-modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.info-modal-title{font-size:14px;font-weight:800}
+.info-close{width:auto;min-height:36px;padding:0 12px}
+.info-modal-body{font-size:13px;line-height:1.9;color:var(--text)}
+.info-modal-body .muted{color:var(--muted);font-size:12px}
+
 .search-wrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .icon-input{position:relative;max-width:240px;width:100%}
 .icon-input input{padding-right:34px}
@@ -237,17 +254,17 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
       <div class="card">
         <div class="head"><div><div class="title">خروجی</div><div class="meta">هماهنگ با طراحی کلی</div></div><div class="tabs"><button class="tab-btn active" data-tab="paneSummary">خلاصه</button><button class="tab-btn" data-tab="paneChart">نمودار</button><button class="tab-btn" data-tab="paneCompare">مقایسه</button></div></div>
         <div id="paneSummary" class="pane active"><div id="resultArea" style="display:none"><div class="summary">
-          <div class="kpi"><div class="k">جمع مبلغ اسمی</div><div class="v" id="sumFace">0</div></div>
-          <div class="kpi"><div class="k">راس وزنی (روز)</div><div class="v" id="weightedDays">0</div></div>
-          <div class="kpi"><div class="k">تاریخ راس</div><div class="v" id="weightedDate">-</div></div>
-          <div class="kpi"><div class="k">ارزش روز صفر</div><div class="v" id="sumPV">0</div></div>
-          <div class="kpi"><div class="k">جمع تنزیل</div><div class="v" id="sumDiscount">0</div></div>
-          <div class="kpi"><div class="k">نرخ مؤثر کل دوره</div><div class="v" id="effectivePeriod">0%</div></div>
-          <div class="kpi"><div class="k">نرخ مؤثر ماهانه</div><div class="v" id="effectiveMonthly">0%</div></div>
-          <div class="kpi"><div class="k">ارزش روز صفر ساده</div><div class="v" id="simplePrincipal">0</div></div>
-          <div class="kpi"><div class="k">اختلاف با ارزش دقیق</div><div class="v" id="principalVsPV">0</div></div>
-          <div class="kpi"><div class="k">تعداد چک</div><div class="v" id="checksCount">0</div></div>
-        </div><div class="mini" style="margin-top:8px">ارزش روز صفر = جمع مبلغ اسمی منهای سود خطی بر مبنای «جمع مبلغ اسمی × نرخ ÷ ۳۰ × راس وزنی». اختلاف با ارزش دقیق هم جداگانه نمایش داده می‌شود.</div></div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('sumFace')"><div class="k">جمع مبلغ اسمی</div><div class="v" id="sumFace">0</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('weightedDays')"><div class="k">راس وزنی (روز)</div><div class="v" id="weightedDays">0</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('weightedDate')"><div class="k">تاریخ راس</div><div class="v" id="weightedDate">-</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('sumPV')"><div class="k">ارزش روز صفر</div><div class="v" id="sumPV">0</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('sumDiscount')"><div class="k">جمع تنزیل</div><div class="v" id="sumDiscount">0</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('effectivePeriod')"><div class="k">نرخ مؤثر کل دوره</div><div class="v" id="effectivePeriod">0%</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('effectiveMonthly')"><div class="k">نرخ مؤثر ماهانه</div><div class="v" id="effectiveMonthly">0%</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('simplePrincipal')"><div class="k">عدد معادل راس</div><div class="v" id="simplePrincipal">0</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('principalVsPV')"><div class="k">اختلاف با ارزش روز صفر</div><div class="v" id="principalVsPV">0</div></div>
+          <div class="kpi clickable" onclick="showKpiInfo('checksCount')"><div class="k">تعداد چک</div><div class="v" id="checksCount">0</div></div>
+        </div><div class="mini" style="margin-top:8px">عدد معادل راس = عددی که اگر با فرمول ساده «اصل + اصل × نرخ ÷ ۳۰ × راس وزنی» محاسبه شود، به جمع مبلغ اسمی برسد.</div></div></div>
         <div id="paneChart" class="pane"><canvas id="chartCanvas" width="900" height="260"></canvas></div>
         <div id="paneCompare" class="pane"><div class="compare-box">
           <div class="compare-card"><div class="head"><div class="title">سناریو A</div><div class="meta">معامله فعلی</div></div><div id="compareA" class="mini">هنوز محاسبه نشده</div></div>
@@ -278,7 +295,7 @@ canvas{width:100%;height:220px;border:1px solid var(--line);border-radius:14px;b
 
 <script>
 let lastResult=null, parsedChecksBuffer=[];
-const HISTORY_KEY='check_discount_history_v21', DRAFT_KEY='check_discount_draft_v21', THEME_KEY='check_discount_theme_v21';
+const HISTORY_KEY='check_discount_history_v22', DRAFT_KEY='check_discount_draft_v22', THEME_KEY='check_discount_theme_v22';
 
 function faToEn(str){ const fa='۰۱۲۳۴۵۶۷۸۹', ar='٠١٢٣٤٥٦٧٨٩'; return String(str||'').split('').map(ch=>fa.includes(ch)?String(fa.indexOf(ch)):ar.includes(ch)?String(ar.indexOf(ch)):ch==='٬'?'':ch).join(''); }
 function onlyDigits(s){ return faToEn(s).replace(/\D/g,''); }
@@ -567,16 +584,11 @@ function calculate(){
     setTimeout(()=>{
       try{
         const data=collectData(); let totalFace=0,totalWeight=0,totalPV=0; const details=[];
-        data.items.forEach((it,idx)=>{ const days=it.jdn-data.origin.jdn, weight=it.amount*days, pv=it.amount/(1+(data.monthlyRate/data.monthBase)*days), discount=it.amount-pv; totalFace+=it.amount; totalWeight+=weight; totalPV+=pv; details.push({index:it.index,amount:it.amount,date8:it.date8,days,weight,pv,discount}); setProgress(10+Math.round(((idx+1)/data.items.length)*80),'ردیف '+(idx+1)+' از '+data.items.length); });
-        const weightedDays=totalWeight/totalFace, weightedDate=jdnToDate8(data.origin.jdn+weightedDays);
-        const totalPVExact=totalPV;
-        const totalPV=totalFace - (totalFace*(data.monthlyRate/data.monthBase)*weightedDays);
-        const totalDiscount=totalFace-totalPV;
-        const effectivePeriod=totalPV>0 ? (totalDiscount/totalPV) : 0;
-        const effectiveMonthly=weightedDays>0?(effectivePeriod*data.monthBase/weightedDays):0;
-        const simplePrincipal=totalPV;
-        const principalVsPV=totalPVExact-totalPV;
-        lastResult={name:document.getElementById('dealName').value.trim()||'بدون نام',note:document.getElementById('dealNote').value.trim(),originDate:data.origin.text,monthlyRatePercent:Number(faToEn(document.getElementById('monthlyRate').value)),monthBase:data.monthBase,totalFace,weightedDays,weightedDate,totalPV,totalPVExact,totalDiscount,effectivePeriod,effectiveMonthly,simplePrincipal,principalVsPV,count:details.length,details};
+        data.items.forEach((it,idx)=>{ const days=it.jdn-data.origin.jdn, weight=it.amount*days, discount=it.amount*(data.monthlyRate/data.monthBase)*days, pv=it.amount-discount; totalFace+=it.amount; totalWeight+=weight; totalPV+=pv; details.push({index:it.index,amount:it.amount,date8:it.date8,days,weight,pv,discount}); setProgress(10+Math.round(((idx+1)/data.items.length)*80),'ردیف '+(idx+1)+' از '+data.items.length); });
+        const weightedDays=totalWeight/totalFace, weightedDate=jdnToDate8(data.origin.jdn+weightedDays), totalDiscount=totalFace-totalPV, effectivePeriod=totalDiscount/totalPV, effectiveMonthly=weightedDays>0?(effectivePeriod*data.monthBase/weightedDays):0;
+        const simplePrincipal=totalFace/(1+(data.monthlyRate/data.monthBase)*weightedDays);
+        const principalVsPV=totalPV-simplePrincipal;
+        lastResult={name:document.getElementById('dealName').value.trim()||'بدون نام',note:document.getElementById('dealNote').value.trim(),originDate:data.origin.text,monthlyRatePercent:Number(faToEn(document.getElementById('monthlyRate').value)),monthBase:data.monthBase,totalFace,weightedDays,weightedDate,totalPV,totalDiscount,effectivePeriod,effectiveMonthly,simplePrincipal,principalVsPV,count:details.length,details};
         renderResult(); saveDraft(); setProgress(100,'انجام شد'); setTimeout(hideProgress,250);
       }catch(e){ hideProgress(); alert(e.message||'خطا در محاسبه'); }
     },20);
@@ -585,20 +597,20 @@ function calculate(){
 function renderResult(){
   if(!lastResult) return;
   document.getElementById('resultArea').style.display='block';
-  document.getElementById('sumFace').textContent=numFmt(lastResult.totalFace);
-  document.getElementById('weightedDays').textContent=numFmt(lastResult.weightedDays);
+  document.getElementById('sumFace').textContent=numFmt(lastResult.totalFace,0);
+  document.getElementById('weightedDays').textContent=numFmt(lastResult.weightedDays,0);
   document.getElementById('weightedDate').textContent=displayDate8(lastResult.weightedDate);
-  document.getElementById('sumPV').textContent=numFmt(lastResult.totalPV);
-  document.getElementById('sumDiscount').textContent=numFmt(lastResult.totalDiscount);
-  document.getElementById('effectivePeriod').textContent=numFmt(lastResult.effectivePeriod*100)+'%';
-  document.getElementById('effectiveMonthly').textContent=numFmt(lastResult.effectiveMonthly*100)+'%';
-  document.getElementById('simplePrincipal').textContent=numFmt(lastResult.simplePrincipal);
-  document.getElementById('principalVsPV').textContent=numFmt(lastResult.principalVsPV);
+  document.getElementById('sumPV').textContent=numFmt(lastResult.totalPV,0);
+  document.getElementById('sumDiscount').textContent=numFmt(lastResult.totalDiscount,0);
+  document.getElementById('effectivePeriod').textContent=numFmt(lastResult.effectivePeriod*100,0)+'%';
+  document.getElementById('effectiveMonthly').textContent=numFmt(lastResult.effectiveMonthly*100,0)+'%';
+  document.getElementById('simplePrincipal').textContent=numFmt(lastResult.simplePrincipal,0);
+  document.getElementById('principalVsPV').textContent=numFmt(lastResult.principalVsPV,0);
   document.getElementById('checksCount').textContent=String(lastResult.count);
-  document.querySelector('#detailsTable tbody').innerHTML=lastResult.details.map(d=>`<tr><td>${d.index}</td><td>${numFmt(d.amount)}</td><td>${displayDate8(d.date8)}</td><td>${numFmt(d.days)}</td><td>${numFmt(d.weight)}</td><td>${numFmt(d.pv)}</td><td>${numFmt(d.discount)}</td></tr>`).join('');
+  document.querySelector('#detailsTable tbody').innerHTML=lastResult.details.map(d=>`<tr><td>${d.index}</td><td>${numFmt(d.amount,0)}</td><td>${displayDate8(d.date8)}</td><td>${numFmt(d.days,0)}</td><td>${numFmt(d.weight,0)}</td><td>${numFmt(d.pv,0)}</td><td>${numFmt(d.discount,0)}</td></tr>`).join('');
   document.getElementById('reportBox').value=buildReport(lastResult);
   drawChart(lastResult);
-  document.getElementById('compareA').innerHTML='نام: <b>'+escapeHtml(lastResult.name)+'</b><br>جمع اسمی: '+numFmt(lastResult.totalFace)+'<br>ارزش روز صفر ساده: '+numFmt(lastResult.simplePrincipal)+'<br>ارزش دقیق: '+numFmt(lastResult.totalPVExact)+'<br>جمع تنزیل: '+numFmt(lastResult.totalDiscount)+'<br>راس: '+numFmt(lastResult.weightedDays)+' روز';
+  document.getElementById('compareA').innerHTML='نام: <b>'+escapeHtml(lastResult.name)+'</b><br>جمع اسمی: '+numFmt(lastResult.totalFace,0)+'<br>عدد معادل راس: '+numFmt(lastResult.simplePrincipal,0)+'<br>ارزش روز صفر: '+numFmt(lastResult.totalPV,0)+'<br>جمع تنزیل: '+numFmt(lastResult.totalDiscount,0)+'<br>راس: '+numFmt(lastResult.weightedDays,0)+' روز';
 }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 function buildReport(r){
@@ -608,17 +620,17 @@ function buildReport(r){
   lines.push('نرخ ماهانه: '+r.monthlyRatePercent+'%');
   lines.push('مبنای ماه: '+r.monthBase+' روز');
   lines.push('تعداد چک: '+r.count);
-  lines.push('جمع مبلغ اسمی: '+numFmt(r.totalFace));
-  lines.push('راس وزنی: '+numFmt(r.weightedDays)+' روز');
+  lines.push('جمع مبلغ اسمی: '+numFmt(r.totalFace,0));
+  lines.push('راس وزنی: '+numFmt(r.weightedDays,0)+' روز');
   lines.push('تاریخ راس: '+displayDate8(r.weightedDate));
-  lines.push('ارزش روز صفر ساده: '+numFmt(r.totalPV));
-  lines.push('ارزش دقیق: '+numFmt(r.totalPVExact));
-  lines.push('جمع تنزیل: '+numFmt(r.totalDiscount));
-  lines.push('نرخ مؤثر کل دوره: '+numFmt(r.effectivePeriod*100)+'%');
-  lines.push('نرخ مؤثر ماهانه: '+numFmt(r.effectiveMonthly*100)+'%');
-  lines.push('اختلاف ارزش ساده با ارزش دقیق: '+numFmt(r.principalVsPV));
+  lines.push('ارزش روز صفر: '+numFmt(r.totalPV,0));
+  lines.push('جمع تنزیل: '+numFmt(r.totalDiscount,0));
+  lines.push('نرخ مؤثر کل دوره: '+numFmt(r.effectivePeriod*100,0)+'%');
+  lines.push('نرخ مؤثر ماهانه: '+numFmt(r.effectiveMonthly*100,0)+'%');
+  lines.push('عدد معادل راس: '+numFmt(r.simplePrincipal,0));
+  lines.push('اختلاف عدد معادل راس با ارزش روز صفر: '+numFmt(r.principalVsPV,0));
   lines.push('');
-  r.details.forEach(d=>lines.push(`ردیف ${d.index} | مبلغ: ${numFmt(d.amount)} | تاریخ: ${displayDate8(d.date8)} | روز: ${numFmt(d.days)} | ارزش دقیق: ${numFmt(d.pv)} | تنزیل دقیق: ${numFmt(d.discount)}`));
+  r.details.forEach(d=>lines.push(`ردیف ${d.index} | مبلغ: ${numFmt(d.amount,0)} | تاریخ: ${displayDate8(d.date8)} | روز: ${numFmt(d.days,0)} | ارزش روز صفر: ${numFmt(d.pv,0)} | تنزیل: ${numFmt(d.discount,0)}`));
   return lines.join('\n');
 }
 function drawChart(r){
@@ -640,7 +652,7 @@ function runCompare(){
     const target=Number(faToEn(document.getElementById('cmpRate').value));
     if(!(face>0&&pv>0&&days>0&&target>=0)) throw new Error('داده‌ها ناقص است');
     const period=(face-pv)/pv, monthly=period*30/days*100, diff=monthly-target;
-    document.getElementById('compareBox').innerHTML='نرخ مؤثر ماهانه: <b>'+numFmt(monthly)+'%</b><br>اختلاف با نرخ هدف '+target+'%: <b class="'+(diff>0?'bad':'ok')+'">'+numFmt(diff)+'%</b>';
+    document.getElementById('compareBox').innerHTML='نرخ مؤثر ماهانه: <b>'+numFmt(monthly,0)+'%</b><br>اختلاف با نرخ هدف '+target+'%: <b class="'+(diff>0?'bad':'ok')+'">'+numFmt(diff,0)+'%</b>';
   }catch(e){ document.getElementById('compareBox').textContent=e.message; }
 }
 function saveBlob(filename,content,mime){ const blob=new Blob([content],{type:mime}), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a); URL.revokeObjectURL(url);},400); }
@@ -680,6 +692,61 @@ function applyTheme(theme){
   if(lastResult) drawChart(lastResult);
 }
 function toggleTheme(){ const current=document.documentElement.getAttribute('data-theme')||'light'; applyTheme(current==='light'?'dark':'light'); }
+
+
+function showKpiInfo(key){
+  if(!lastResult){ return; }
+  const data = {
+    sumFace: {
+      title:'جمع مبلغ اسمی',
+      body:'جمع همه مبالغ چک‌ها.<br><br><b>فرمول:</b><br>جمع مبلغ اسمی = مجموع مبالغ همه چک‌ها<br><br><span class="muted">در این اپ، مبلغ هر چک پس از تبدیل به تومان با هم جمع می‌شود.</span>'
+    },
+    weightedDays: {
+      title:'راس وزنی (روز)',
+      body:'میانگین وزنی فاصله زمانی چک‌ها از تاریخ مبدا.<br><br><b>فرمول:</b><br>راس وزنی = مجموع (مبلغ × روز) ÷ مجموع مبلغ'
+    },
+    weightedDate: {
+      title:'تاریخ راس',
+      body:'تاریخی که از افزودن راس وزنی به تاریخ مبدا به‌دست می‌آید.<br><br><b>فرمول:</b><br>تاریخ راس = تاریخ مبدا + راس وزنی'
+    },
+    sumPV: {
+      title:'ارزش روز صفر',
+      body:'ارزش فعلی کل چک‌ها بر اساس مدل تنزیل ساده خطی که در همین اپ استفاده می‌شود.<br><br><b>فرمول هر چک:</b><br>تنزیل = مبلغ × نرخ ماهانه ÷ مبنای ماه × تعداد روز<br>ارزش روز صفر هر چک = مبلغ − تنزیل<br><br><b>فرمول کل:</b><br>ارزش روز صفر = مجموع ارزش روز صفر همه چک‌ها'
+    },
+    sumDiscount: {
+      title:'جمع تنزیل',
+      body:'مجموع اختلاف مبلغ اسمی با ارزش روز صفر.<br><br><b>فرمول:</b><br>جمع تنزیل = جمع مبلغ اسمی − ارزش روز صفر'
+    },
+    effectivePeriod: {
+      title:'نرخ مؤثر کل دوره',
+      body:'نسبت کل تنزیل به ارزش روز صفر در کل دوره.<br><br><b>فرمول:</b><br>نرخ مؤثر کل دوره = جمع تنزیل ÷ ارزش روز صفر'
+    },
+    effectiveMonthly: {
+      title:'نرخ مؤثر ماهانه',
+      body:'برگردان نرخ مؤثر کل دوره به مقیاس ماهانه بر اساس راس وزنی.<br><br><b>فرمول:</b><br>نرخ مؤثر ماهانه = نرخ مؤثر کل دوره × مبنای ماه ÷ راس وزنی'
+    },
+    simplePrincipal: {
+      title:'عدد معادل راس',
+      body:'عددی که اگر با فرمول ساده اصل + سود خطی بر مبنای راس وزنی محاسبه شود، به جمع مبلغ اسمی برسد.<br><br><b>فرمول:</b><br>x + (x × نرخ ماهانه ÷ مبنای ماه × راس وزنی) = جمع مبلغ اسمی<br><br><b>حل فرمول:</b><br>x = جمع مبلغ اسمی ÷ (1 + نرخ ماهانه ÷ مبنای ماه × راس وزنی)'
+    },
+    principalVsPV: {
+      title:'اختلاف با ارزش روز صفر',
+      body:'اختلاف بین عدد معادل راس و ارزش روز صفر.<br><br><b>فرمول:</b><br>اختلاف = ارزش روز صفر − عدد معادل راس<br><br><span class="muted">این عدد نشان می‌دهد مدل ساده راس‌محور چقدر با تنزیل دقیق ردیف‌به‌ردیف فاصله دارد.</span>'
+    },
+    checksCount: {
+      title:'تعداد چک',
+      body:'تعداد ردیف‌های چکی که در محاسبه وارد شده‌اند.<br><br><b>فرمول:</b><br>تعداد چک = تعداد ردیف‌های معتبر شناسایی‌شده / ثبت‌شده'
+    }
+  };
+  const item = data[key];
+  if(!item) return;
+  document.getElementById('infoModalTitle').innerHTML = item.title;
+  document.getElementById('infoModalBody').innerHTML = item.body;
+  document.getElementById('infoModalBackdrop').classList.add('open');
+}
+function closeKpiInfo(){
+  document.getElementById('infoModalBackdrop').classList.remove('open');
+}
 
 window.addEventListener('beforeunload',saveDraft);
 window.addEventListener('load',()=>{
@@ -735,5 +802,16 @@ renderHistory();
   </div>
 
 </div>
+
+<div id="infoModalBackdrop" class="info-modal-backdrop" onclick="if(event.target===this)closeKpiInfo()">
+  <div class="info-modal">
+    <div class="info-modal-head">
+      <div class="info-modal-title" id="infoModalTitle">توضیح</div>
+      <button class="btn secondary info-close" onclick="closeKpiInfo()">بستن</button>
+    </div>
+    <div class="info-modal-body" id="infoModalBody"></div>
+  </div>
+</div>
+
 </body>
 </html>
